@@ -26,7 +26,7 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.svm import SVR
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error, mean_absolute_percentage_error
 from xgboost.sklearn import XGBRegressor
-import lightgbm as lgb
+import lightgbm as lgb      
 import streamlit as st
 # import shap
 
@@ -69,7 +69,6 @@ class autoregression:
                         ('cleaner',SimpleImputer(strategy = 'most_frequent')),
                     ])
 
-
         preprocessor = ColumnTransformer([
                         ('numerical', num_pipeline, make_column_selector(dtype_exclude=['object','category','bool'])),
                         ('categorical', cat_pipeline, make_column_selector(dtype_include=['object','category','bool'])),
@@ -93,11 +92,12 @@ class autoregression:
 
 
             model_pipeline_steps = []
+            
             model_pipeline_steps.append(('preprocessor',preprocessor))
             model_pipeline_steps.append(('variance_threshold',VarianceThreshold(threshold=0)))
-            
             model_pipeline_steps.append(('feature_selector',SelectKBest(f_regression,k='all')))
             model_pipeline_steps.append(('estimator',LinearRegression()))
+            
             model_pipeline = Pipeline(model_pipeline_steps)
             
             try:
@@ -344,8 +344,8 @@ class autoregression:
 
         #dumping ML model
         if method=="ml":
-            model_name = "./model.pkl"
-            zip_path = "./model.zip"
+            model_name = "./Trained_Models/model.pkl"
+            zip_path = "./Trained_Models/model.zip"
             output_model = zipfile.ZipFile(zip_path, mode='w', compression=zipfile.ZIP_DEFLATED)
             with open(model_name, 'wb') as f:
                 pickle.dump(model, f,protocol=pickle.HIGHEST_PROTOCOL)
@@ -354,8 +354,8 @@ class autoregression:
         
         else:
             #exporting tf model
-            model_name = f"./{exp_name}/best_model"
-            zip_path = "./model.zip"
+            model_name = f"./Trained_Models/{exp_name}/best_model"
+            zip_path = "./Trained_Models/model.zip"
             shutil.make_archive("model", "zip", model_name)
             output_model = zipfile.ZipFile(zip_path, mode='a', compression=zipfile.ZIP_DEFLATED)
             output_model.close()
@@ -423,7 +423,7 @@ class autoregression:
 
         metrics['Best Features'] = [model.select_feat]
 
-        st.subheader("Results:")
+        st.subheader("Results:")    
         styler = metrics.style.hide_index()
         st.write(styler.to_html(), unsafe_allow_html=True)
         if method=='ml':
@@ -432,7 +432,7 @@ class autoregression:
             st.markdown(f"<small>ⓘ Feature Selection Criteria: ANOVA F-test</small></font>",unsafe_allow_html=True)
 
         if r2<0.9:
-            st.markdown("<small><b>Tip to Remember:</b> A Model is as good as the data.</small>",unsafe_allow_html=True)
+            st.markdown("<small><b>Tip to Remember:</b> A Model is as good a    s the data.</small>",unsafe_allow_html=True)
 
         with st.expander("Show Model Pipeline"):
             st.markdown(f"<b>Model Parameters:</b>  \n{model.best_estimator._final_estimator.get_params()}",unsafe_allow_html=True)

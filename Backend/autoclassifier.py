@@ -94,7 +94,7 @@ class autoclassifier:
             estimators = [
                 LogisticRegression(class_weight="balanced",max_iter=1000,random_state=101,n_jobs = 4), 
                 RandomForestClassifier(random_state=101,class_weight="balanced",n_jobs = 4),
-                KNeighborsClassifier(n_jobs = 4),
+                KNeighborsClassifier(n_neighbors=5, n_jobs = 4),
                 SVC(kernel='linear',probability=True,random_state = 101,class_weight="balanced"), 
                 GaussianNB(),
                 # CatBoostClassifier(auto_class_weights='Balanced',random_state=101,iterations=500),
@@ -250,8 +250,9 @@ class autoclassifier:
             
             # K-nearest neighbors
             elif estimator=="KNeighborsClassifier":
+                max_class = np.max(np.bincount(y))
                 optimization_grid.append({
-                    'estimator__n_neighbors':np.arange(2,50),
+                    'n_neighbors':np.arange(1,max_class,2),
                     'estimator__weights':['uniform','distance']
                 })
                 # optimization_grid.append({
@@ -375,15 +376,15 @@ class autoclassifier:
         in:  model
         out: href string
         """
-        decoder_name = "./decoder.pkl"
+        decoder_name = "./Trained_Models/decoder.pkl"
         #dumping label decoder
         with open(decoder_name, 'wb') as f:
             pickle.dump(decoder, f,protocol=pickle.HIGHEST_PROTOCOL)
 
         #dumping ML model
         if method=="ml":
-            model_name = "./model.pkl"
-            zip_path = "./model.zip"
+            model_name = "./Trained_Models/model.pkl"
+            zip_path = "./Trained_Models/model.zip"
             output_model = zipfile.ZipFile(zip_path, mode='w', compression=zipfile.ZIP_DEFLATED)
             with open(model_name, 'wb') as f:
                 pickle.dump(model, f,protocol=pickle.HIGHEST_PROTOCOL)
@@ -393,8 +394,8 @@ class autoclassifier:
         
         else:
             #exporting tf model
-            model_name = "./structured_data_classifier/best_model"
-            zip_path = "./model.zip"
+            model_name = "./Trained_Models/structured_data_classifier/best_model"
+            zip_path = "./Trained_Models/model.zip"
             shutil.make_archive("model", "zip", model_name)
             output_model = zipfile.ZipFile(zip_path, mode='a', compression=zipfile.ZIP_DEFLATED)
             output_model.write(decoder_name)

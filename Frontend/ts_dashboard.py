@@ -3,7 +3,7 @@ import streamlit as st
 import numpy as np
 import time
 import pandas as pd
-from autotimeseries import autotimeseries
+from Backend.autotimeseries import autotimeseries
 from load_data import dataloader
 
 def app():

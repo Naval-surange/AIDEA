@@ -2,19 +2,22 @@ import pandas_profiling as pp
 from streamlit_pandas_profiling import st_profile_report
 import streamlit as st
 import base64
+from collections import Counter
 import numpy as np
 import pandas as pd
 from sklearn.utils import shuffle
-from autoregression import autoregression
+from sklearn.utils.class_weight import compute_sample_weight
 from load_data import dataloader
+from Backend.autoclassifier import autoclassifier
 from sklearn.model_selection import train_test_split
-from sklearn.datasets import load_diabetes, fetch_california_housing
+from sklearn.impute import SimpleImputer
+from sklearn.datasets import load_iris, load_wine
+from sklearn.preprocessing import LabelEncoder
 import streamlit.components.v1 as components
-from explainerdashboard import RegressionExplainer, ExplainerDashboard
+from explainerdashboard import ClassifierExplainer, ExplainerDashboard
 
 
 def app():
-    # st.set_page_config(layout="wide",page_title='AIDEA', page_icon="💡")
     hide_streamlit_style = """
                     <style>
                     #MainMenu {visibility: hidden;}
@@ -23,6 +26,8 @@ def app():
                     """
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
+    class_imbalance = False
+    class_weight = None
     best_model_name = "Best Model"
     df = None
     test_df = None
@@ -47,13 +52,15 @@ def app():
                 df = dataloader.load_data(method='url',file_name=url)
 
         elif input_data=="Select Existing":
-            existing_data = st.sidebar.selectbox("Select from Existing Datasets:",options=["--Select--","Servo","Diabetes"])
-            if existing_data=="Servo":
-                df_colnames = ["motor", "screw", "pgain", "vgain", "class"]
-                df = pd.read_csv("./datasets/servo.data",sep=",", names=df_colnames)
+            existing_data = st.sidebar.selectbox("Select from Existing Datasets:",options=["--Select--","IRIS (Multi-Class Classification)", "Bank Note (Binary Classification)", "Wine (Multi-Class Classification)"])
+            if existing_data=="IRIS (Multi-Class Classification)":
+                df = load_iris(as_frame=True).frame
 
-            elif existing_data=="Diabetes":
-                df = load_diabetes(as_frame=True).frame
+            elif existing_data=="Bank Note (Binary Classification)":
+                df = pd.read_csv("./datasets/banknote.csv")
+
+            elif existing_data=="Wine (Multi-Class Classification)":
+                df = load_wine(as_frame=True).frame
 
 
         elif input_data=="Upload File":
@@ -65,7 +72,6 @@ def app():
                 test_df = dataloader.load_data(method='upload',file_name=uploaded_file2)
 
     def find_id_columns(data, target):
-    # some times we have id column in the data set, we will try to find it and then will drop it if found
         len_samples = len(data)
         id_columns = []
         for i in data.select_dtypes(include=["object", "int64", "float64", "float32"]).columns:
@@ -77,9 +83,8 @@ def app():
                     except:
                         continue
                     if col.nunique() == len_samples:
-                        # we extract column and sort it
                         features = col.sort_values()
-                        # now we subtract i+1-th value from i-th (calculating increments)
+                        # calculating increment
                         increments = features.diff()[1:]
                         # if all increments are 1 (with float tolerance), then the column is ID column
                         if sum(np.abs(increments - 1) < 1e-7) == len_samples - 1:
@@ -94,9 +99,9 @@ def app():
 
     if df is not None:
         df.drop_duplicates(inplace=True)
-        # df.dropna(axis=0,inplace=True)
-        # df = df[~df.isin([np.inf, -np.inf]).any(1)]
-        df.replace([np.inf, -np.inf], np.NaN, inplace=True)
+        df.replace([np.inf, -np.inf], np.nan, inplace=True)
+        # df.dropna(inplace=True)
+        # df = df[~df.isin([np.nan, np.inf, -np.inf]).any(1)]
         df.index.name = 'index'
 
         st.write("Dataset Sample:")
@@ -114,24 +119,22 @@ def app():
             method = st.selectbox("Select Mode",["Machine Learning","Deep Learning"])
         with c2:
             target_var = st.selectbox("Select Target Column",options=["--Select--"]+df.columns.values.tolist())
-        # with c3:
-        #     index_var = st.selectbox("Select ID/Index Column",options=["--Select--","--NA--"]+df.columns.values.tolist(),help="Select --NA-- if there is no separate ID/Index column")
         with c3:
             drop_var = st.multiselect("Select Irrelevant Columns to drop (if any)",options=["--NA--"]+df.columns.values.tolist())
-        
+
         if target_var!="--Select--":
 
             index_var = find_id_columns(df,target_var)
 
             df = df.loc[:,~df.columns.duplicated()]
-
+            
             for i in df.select_dtypes(include=["float64","float32"]).columns:
                 count_float = np.nansum([False if r.is_integer() else True for r in df[i]])
                 if (count_float == 0) & (df[i].nunique() <= 20):
                     df[i] = df[i].astype("object")
-
-            numerical_var = df.select_dtypes(include=["int32", "int64", "float64", "float32"]).columns.values.tolist()
             
+            numerical_var = df.select_dtypes(include=["int32", "int64", "float64", "float32"]).columns.values.tolist()
+
             if index_var in numerical_var:
                 numerical_var.remove(index_var)
             if target_var in numerical_var:
@@ -144,13 +147,10 @@ def app():
                 for i in numerical_var:
                     if df[i].dtypes == "float64":
                         df[i] = df[i].astype("float32")
+
             elif len(numerical_var)==1:
                 if df[numerical_var].dtypes == "float64":
                         df[numerical_var] = df[numerical_var].astype("float32")
-
-            if df[target_var].dtypes == "float64":
-                df[target_var] = df[target_var].astype("float32")
-
             
 
             cat_var = df.select_dtypes(include=["object","category","bool"]).columns.values.tolist()
@@ -170,8 +170,10 @@ def app():
             if numerical_var==[]:
                 numerical_var = None
 
+            df[target_var] = df[target_var].astype("category")
+
             st.markdown(f"Inferred Columns:<small><ol> <li><b>ID:</b> {index_var}</li>  <li><b>Numerical:</b> {numerical_var}</li>  <li><b>Categorical:</b> {cat_var}</li>  <li><b>Target (Label):</b> {target_var}</li></ol></small>",unsafe_allow_html=True)
-            
+
             df = shuffle(df)
             df.reset_index(inplace=True, drop=True)
 
@@ -179,25 +181,54 @@ def app():
             X = X.drop(drop_var,axis=1,errors='ignore')
 
             if test_df is not None:
-                test_X = test_df.drop(drop_var,axis=1,errors='ignore')
+                test_X = test_df.drop(drop_var,axis=1,errors='ignore')           
+            
+
+            st.markdown(f"Unique Target Values: <font color='#1E88E5'>{list(df[target_var].dropna().unique())}</font>",unsafe_allow_html=True)
+            
+            #label encoding target variable
+            if df[target_var].isna().sum().sum()>0:
+                st.text("NaN values found in target variable. Will be handled by imputing most frequent values.")
+                imputer = SimpleImputer(strategy = 'most_frequent')
+                df[target_var] = imputer.fit_transform(df[target_var].values.reshape(-1, 1))
+                le = LabelEncoder()
+                df[target_var] = le.fit_transform(df[target_var])
+            else:
+                le = LabelEncoder()
+                df[target_var] = le.fit_transform(df[target_var])            
+            
             
             y = df[target_var]
+
+            #checking data imbalancing and computing class_weights
+            class_count = list(Counter(y.values).values())
+            class_weight = compute_sample_weight('balanced', y)
+
+            if max(class_count)/min(class_count)>=1.25:
+                with st.expander("There is an imbalance in target classes. Class Weight Balancing will be applied wherever possible."):
+                    imb_df = pd.DataFrame(Counter(y).items(),columns=['Class','Frequency Count'])
+                    st.write(imb_df)
+                class_imbalance = True
+
+            if min(class_count)<5:
+                n_splits = 3
+            else:
+                n_splits = 5
 
             if index_var!=None:
                 exp_idx = index_var
             else:
                 exp_idx = None
-            
-            n_splits = 5
+
             if st.button("Run Experiment"):
                 if exp_name!="":
                     if method=="Machine Learning":
-                        model = autoregression.run_experiment(X=X,y=y,method='ml',n_splits=n_splits,exp_name=exp_name)
-                        
+                        model = autoclassifier.run_experiment(X=X,y=y,le=le,method='ml',class_imbalance=class_imbalance,
+                                                            class_weight=None,n_splits=n_splits,exp_name=exp_name)
                         st.subheader("XAI Dashboard")
-                        with st.spinner('Creating Explainability Dashboard...'):
-                            explainer = RegressionExplainer(model, X, y, 
-                                        # labels=list(df[target_var].unique()),
+                        with st.spinner('Creating Explainability Dashboard... (may take some time)'):
+
+                            explainer = ClassifierExplainer(model.best_estimator, X, y, 
                                         index_name = exp_idx,
                                         target = target_var, # defaults to y.name
                                         n_jobs=4,
@@ -218,17 +249,17 @@ def app():
 
                         with st.spinner('Exporting Model...'):
                             try:
-                                model_file = autoregression.download_model(model,method="ml",exp_name=exp_name)
+                                model_file = autoclassifier.download_model(model,le,method="ml")
                                 st.markdown(model_file, unsafe_allow_html=True)
                             except:
                                 st.info("Please clear the cache, train model again and then try again to export the model.")
                             
                     else:
-                        model = autoregression.run_experiment(X=X,y=y,method='dl',n_splits=n_splits,exp_name=exp_name)
+                        model = autoclassifier.run_experiment(X=X,y=y,le=le,method='dl',class_imbalance=class_imbalance,class_weight=class_weight,n_splits=n_splits,exp_name=exp_name)
 
                         with st.spinner("Exporting Model..."):
                             try:
-                                model_file = autoregression.download_model(model,method="dl")
+                                model_file = autoclassifier.download_model(model,le,method="dl")
                                 st.markdown(model_file, unsafe_allow_html=True)
                             except:
                                 st.info("Please clear the cache, train model again and then try again to export the model.")

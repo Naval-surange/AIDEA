@@ -1,9 +1,14 @@
 import streamlit as st
 st.set_page_config(layout="wide",page_title='AIDEA', page_icon="💡")
+
+import sys
+sys.path.insert(1,"./Frontend")
+sys.path.insert(1,"./Backend")
+
 from PIL import Image
-import classif_dashboard
-import regress_dashboard
-import ts_dashboard
+import Frontend.classif_dashboard as classif_dashboard
+import Frontend.regress_dashboard as regress_dashboard
+import Frontend.ts_dashboard as ts_dashboard
 
 hide_streamlit_style = """
                     <style>
@@ -12,7 +17,7 @@ hide_streamlit_style = """
                     </style>
                     """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-logo = Image.open('./logo.png')
+logo = Image.open('./Frontend/logo.png')
 
 st.image(logo,width=300,clamp=True)
 st.markdown("<b>AI</b> <b>D</b>evelopment, <b>E</b>xplainability, and <b>A</b>bstraction  \n<small><i>Minimalistic No-Code platform to convert your AI Ideas into Reality</i></small>",unsafe_allow_html=True)
