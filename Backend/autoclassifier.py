@@ -31,6 +31,7 @@ from sklearn.metrics import balanced_accuracy_score, accuracy_score, classificat
 import lightgbm as lgb
 import streamlit as st
 
+from Session import get_session_id
 
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--savemodel', choices=['yes', 'no'])
@@ -98,7 +99,7 @@ class autoclassifier:
                 SVC(kernel='linear',probability=True,random_state = 101,class_weight="balanced"), 
                 GaussianNB(),
                 # CatBoostClassifier(auto_class_weights='Balanced',random_state=101,iterations=500),
-                XGBClassifier(random_state=101,use_label_encoder=False,n_jobs = 4),
+                XGBClassifier(random_state=101,use_label_encoder=False,n_jobs = 4,eval_metric='mlogloss'),
                 lgb.sklearn.LGBMClassifier(random_state=101,class_weight="balanced",n_jobs = 4),
                 ExtraTreesClassifier(random_state=101,class_weight="balanced",n_jobs = 4),
                 GradientBoostingClassifier(max_depth=20,random_state=101),
@@ -383,8 +384,8 @@ class autoclassifier:
 
         #dumping ML model
         if method=="ml":
-            model_name = "./Trained_Models/model.pkl"
-            zip_path = "./Trained_Models/model.zip"
+            model_name = f"./Trained_Models/model{get_session_id()}.pkl"
+            zip_path = f"./Trained_Models/model{get_session_id()}.zip"
             output_model = zipfile.ZipFile(zip_path, mode='w', compression=zipfile.ZIP_DEFLATED)
             with open(model_name, 'wb') as f:
                 pickle.dump(model, f,protocol=pickle.HIGHEST_PROTOCOL)
@@ -394,8 +395,8 @@ class autoclassifier:
         
         else:
             #exporting tf model
-            model_name = "./Trained_Models/structured_data_classifier/best_model"
-            zip_path = "./Trained_Models/model.zip"
+            model_name = f"./Trained_Models/structured_data_classifier/best_model{get_session_id()}"
+            zip_path = f"./Trained_Models/model{get_session_id()}.zip"
             shutil.make_archive("model", "zip", model_name)
             output_model = zipfile.ZipFile(zip_path, mode='a', compression=zipfile.ZIP_DEFLATED)
             output_model.write(decoder_name)
@@ -436,7 +437,7 @@ class autoclassifier:
 
         model_file = (
             custom_css
-            + f'<a download="model.zip" id="{button_id}" href="data:file/output_model;base64,{encoder}">Download Trained Model</a><br></br>'
+            + f'<a download="model{get_session_id()}.zip" id="{button_id}" href="data:file/output_model;base64,{encoder}">Download Trained Model</a><br></br>'
         )
         
         return model_file

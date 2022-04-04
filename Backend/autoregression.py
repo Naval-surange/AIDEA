@@ -28,6 +28,7 @@ from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error, m
 from xgboost.sklearn import XGBRegressor
 import lightgbm as lgb      
 import streamlit as st
+from Session import get_session_id
 # import shap
 
 # parser = argparse.ArgumentParser()
@@ -344,8 +345,8 @@ class autoregression:
 
         #dumping ML model
         if method=="ml":
-            model_name = "./Trained_Models/model.pkl"
-            zip_path = "./Trained_Models/model.zip"
+            model_name = f"./Trained_Models/model{get_session_id()}.pkl"
+            zip_path = f"./Trained_Models/model{get_session_id()}.zip"
             output_model = zipfile.ZipFile(zip_path, mode='w', compression=zipfile.ZIP_DEFLATED)
             with open(model_name, 'wb') as f:
                 pickle.dump(model, f,protocol=pickle.HIGHEST_PROTOCOL)
@@ -354,8 +355,8 @@ class autoregression:
         
         else:
             #exporting tf model
-            model_name = f"./Trained_Models/{exp_name}/best_model"
-            zip_path = "./Trained_Models/model.zip"
+            model_name = f"./Trained_Models/{exp_name}/best_model{get_session_id()}"
+            zip_path = f"./Trained_Models/model{get_session_id()}.zip"
             shutil.make_archive("model", "zip", model_name)
             output_model = zipfile.ZipFile(zip_path, mode='a', compression=zipfile.ZIP_DEFLATED)
             output_model.close()

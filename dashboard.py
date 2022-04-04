@@ -10,6 +10,9 @@ import Frontend.classif_dashboard as classif_dashboard
 import Frontend.regress_dashboard as regress_dashboard
 import Frontend.ts_dashboard as ts_dashboard
 
+import warnings
+warnings.filterwarnings('always')  # "error", "ignore", "always", "default", "module" or "once"
+
 hide_streamlit_style = """
                     <style>
                     #MainMenu {visibility: hidden;}
