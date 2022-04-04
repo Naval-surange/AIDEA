@@ -1,5 +1,6 @@
 #Venv
 AIDEA
+Trained_Models/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
