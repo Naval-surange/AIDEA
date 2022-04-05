@@ -5,7 +5,7 @@ WORKDIR /AIDEA
 ADD ./requirements.txt /AIDEA/requirements.txt
 RUN pip3 install -r requirements.txt
 
-ADD . ./AIDEA
+ADD . .
 
 EXPOSE 8501
 

@@ -21,3 +21,4 @@ statsmodels==0.12.1
 numpy==1.19.5
 dash-bootstrap-components==0.13.1
 jinja2==3.0.3
+click==7.1.2
