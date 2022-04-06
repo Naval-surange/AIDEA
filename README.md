@@ -88,9 +88,10 @@ And then it performs the hyper-parameter tuning for the best model.
 > **Frontend**
 - StreamLit and Dask.
 - numpy and pandas for effecient and vectorised computation.
+- PandasProfiling for generating the EDA report.
+- sklearn for loading and showing availabe datasets to the user. 
 
 > **Backend**
-- PandasProfiling for generating the EDA report.
 - SkLearn for creating model, training model, and searching best hyperparameters for the dataset.
 - autokeras for finding model which fits the dataset.
 - scikitplot for plotting different graphs and matrics.
