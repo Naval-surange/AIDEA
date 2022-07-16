@@ -50,7 +50,7 @@ with placeholder.container():
         app.add_app("Signup", app=signup_app, icon="🔐")
         app.run()
         st.markdown("---")
-        st.markdown("<small><center><b>A Ripik.ai Product</b></center></small>",
+        st.markdown("<small><center><b>Made with ❤️ by Naval Surange</b></center></small>",
                 unsafe_allow_html=True)
 
 fp = open("./Backend/logged_in_user.txt", "r")
@@ -92,5 +92,5 @@ if(logged_in):
         st.markdown("<small><center><i>Note: Trained Models should not be used in production using current version of AIDEA.</i></center></small>", unsafe_allow_html=True)
 
     st.sidebar.markdown("---")
-    st.markdown("<small><center><b>A Ripik.ai Product</b></center></small>",
+    st.markdown("<small><center><b>Made with ❤️ by Naval Surange</b></center></small>",
                 unsafe_allow_html=True)

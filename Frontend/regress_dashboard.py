@@ -247,4 +247,4 @@ def app():
 
     st.markdown("---")
     st.markdown("<small><center><i>Note: Trained Models should not be used in production using current version of AIDEA.</i></center></small>",unsafe_allow_html=True)
-    st.markdown("<small><center><b>A Ripik.ai Product</b></center></small>",unsafe_allow_html=True)
+    st.markdown("<small><center><b>Made with ❤️ by Naval Surange</b></center></small>",unsafe_allow_html=True)

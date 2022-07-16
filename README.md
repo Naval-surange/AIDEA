@@ -1,7 +1,11 @@
 # AIDEA
-Aidea tool @ripik
+A No-Code platform for developing Machine Learning models without writing a single line of code. 
 
-It is a Minimalistic No-Code platform to convert your AI Ideas into Reality
+Aidea trains mutiple of regression and classification models for your provided data and the it picks the best version out of them. Finally after this the AIDEA then proceeds to perform hyper parameter tuning on the best model to improve its accuracy even more.
+
+Apart from this it also generates a XAI dashborad to analyze the model created by it.
+
+The user can also download the pipeline for the hyperparameter tuned model from the tool.
 
 ## Building guide
 > To build the container 
